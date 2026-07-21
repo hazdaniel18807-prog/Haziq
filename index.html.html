@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LACING WORLD - Digital Lacing Card MBPK</title>
+    <style>
+        :root {
+            --primary: #FF9AA2;
+            --secondary: #FFB7B2;
+            --tertiary: #FFDAC1;
+            --quaternary: #E2F0CB;
+            --quinary: #B5EAD7;
+            --senary: #C7CEEA;
+            --text-dark: #5c4b51;
+            --bg-color: #fcfcfc;
+            --danger: #ff6b6b;
+            --success: #4ecdc4;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            background-image: radial-gradient(var(--quinary) 2px, transparent 2px);
+            background-size: 30px 30px;
+            color: var(--text-dark);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Typography & UI */
+        h1 {
+            font-size: 3rem;
+            color: #ff8b94;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: bounceIn 1s cubic-bezier(0.28, 0.84, 0.42, 1);
+        }
+
+        .btn {
+            background: var(--primary);
+            border: none;
+            padding: 15px 35px;
+            margin: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05) translateY(-3px);
+            background: #ff8b94;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-green { background: var(--quaternary); color: var(--text-dark); }
+        .btn-green:hover { background: #cce8a3; }
+        .btn-blue { background: var(--senary); color: var(--text-dark); }
+        .btn-blue:hover { background: #b1b9e0; }
+
+        /* HUD */
+        #game-hud {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 5;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        #hearts span {
+            color: var(--danger);
+            font-size: 2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Play Area Layout (Card + Canvas) */
+        #play-area {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 80px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Reference Card */
+        #reference-card {
+            background: white;
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 5px solid var(--tertiary);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: bounceIn 0.8s ease-out;
+        }
+
+        #reference-card h3 {
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            background: var(--quinary);
+            padding: 5px 20px;
+            border-radius: 20px;
+        }
+
+        #ref-image-display {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.1));
+        }
+
+        /* Canvas */
+        #game-canvas {
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border: 6px solid var(--primary);
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* Card Select Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            max-width: 900px;
+            padding: 20px;
+        }
+
+        .card-btn {
+            background: white;
+            border: 4px solid var(--tertiary);
+            border-radius: 25px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .card-btn img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+
+        .card-btn:hover {
+            transform: scale(1.1) translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        /* Animations */
+        @keyframes bounceIn {
+            0% { transform: scale(0.1); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .shake-anim { animation: shake 0.5s; }
+
+        .modal-content {
+            background: white;
+            padding: 50px;
+            border-radius: 40px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            border: 6px solid var(--primary);
+            max-width: 600px;
+        }
+
+        #stars-container {
+            font-size: 4rem;
+            color: gold;
+            margin: 20px 0;
+            text-shadow: 0 4px 10px rgba(255, 215, 0, 0.4);
+            letter-spacing: 10px;
+        }
+
+        @media (max-width: 900px) {
+            #play-area {
+                flex-direction: column;
+                margin-top: 100px;
+                gap: 15px;
+            }
+            #reference-card {
+                flex-direction: row;
+                padding: 10px 20px;
+                gap: 20px;
+                border-radius: 20px;
+            }
+            #reference-card h3 {
+                margin-bottom: 0;
+                font-size: 1.2rem;
+            }
+            #ref-image-display {
+                width: 80px;
+                height: 80px;
+            }
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+            #game-canvas { width: 90vw; height: 90vw; max-width: 500px; max-height: 500px; }
+            h1 { font-size: 2rem; }
+            #game-hud { font-size: 1rem; padding: 10px; }
+            #game-hud .hud-item span { font-size: 1.2rem !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu" class="screen">
+        <h1 style="font-size: 4rem;">LACING WORLD<br><span style="font-size: 1.8rem; color: #5c4b51;">Digital Lacing Card MBPK</span></h1>
+        <button class="btn" onclick="nav('card-select'); speak('Sila pilih kad');">Mula Bermain</button>
+        <button class="btn btn-blue" onclick="nav('how-to-play')">Cara Bermain</button>
+        <button class="btn btn-green" onclick="nav('settings')">Tetapan & Markah</button>
+    </div>
+
+    <!-- HOW TO PLAY -->
+    <div id="how-to-play" class="screen hidden">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 25px; font-size: 2.5rem; color: var(--primary);">Cara Bermain</h2>
+            <div style="font-size: 1.3rem; line-height: 1.8; margin-bottom: 30px; text-align: left; color: var(--text-dark);">
+                <p>🌟 <strong>Pilih kad</strong> corak yang anda suka.</p>
+                <p>👁️ <strong>Lihat Gambar Contoh</strong> untuk membayangkan bentuk akhir.</p>
+                <p>✨ <strong>Perhatikan</strong> lubang yang bercahaya dan berdegup.</p>
+                <p>🧵 <strong>Klik dan seret</strong> tali ke arah lubang bercahaya tersebut.</p>
+                <p>⏱️ <strong>Siapkan</strong> sulaman sehingga terbentuk corak sebelum masa tamat!</p>
+            </div>
+            <button class="btn" onclick="nav('main-menu')">Faham & Kembali</button>
+        </div>
+    </div>
+
+    <!-- SETTINGS & SCORE -->
+    <div id="settings" class="screen hidden">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; font-size: 2.5rem; color: var(--primary);">Markah Tertinggi</h2>
+            <h1 id="high-score-display" style="color: gold; font-size: 5rem; text-shadow: 0 4px 10px rgba(0,0,0,0.1);">0</h1>
+            <button class="btn btn-danger" style="background: var(--danger);" onclick="resetHighScore()">Reset Markah</button>
+            <br><br>
+            <button class="btn btn-blue" onclick="nav('main-menu')">Kembali</button>
+        </div>
+    </div>
+
+    <!-- CARD SELECTION -->
+    <div id="card-select" class="screen hidden">
+        <h1 style="color: var(--text-dark); margin-bottom: 10px;">Pilih Bentuk</h1>
+        <div class="card-grid" id="card-grid-container"></div>
+        <button class="btn btn-blue" style="margin-top: 30px;" onclick="nav('main-menu')">Kembali Ke Menu</button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen hidden" style="background: transparent;">
+        <div id="game-hud">
+            <div class="hud-item">
+                <span id="hearts">❤️❤️❤️</span>
+            </div>
+            <div class="hud-item" style="color: var(--text-dark);">
+                ⏳ Masa: <span id="timer-display" style="color: var(--primary); font-size: 2rem;">60</span>s
+            </div>
+            <div class="hud-item" style="color: var(--text-dark);">
+                ⭐ Markah: <span id="score-display" style="color: var(--success); font-size: 2rem;">0</span>
+            </div>
+            <button class="btn btn-danger" style="background: var(--danger); padding: 8px 20px; font-size: 1.2rem; margin:0;" onclick="quitGame()">Berhenti</button>
+        </div>
+        
+        <div id="play-area">
+            <!-- Rujukan Gambar Diasingkan -->
+            <div id="reference-card">
+                <h3>Bentuk Contoh</h3>
+                <img id="ref-image-display" src="" alt="Gambar Rujukan">
+            </div>
+            <!-- Kanvas Permainan -->
+            <canvas id="game-canvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="result-screen" class="screen hidden">
+        <div class="modal-content">
+            <h1 id="result-title" style="font-size: 3.5rem;">Tahniah!</h1>
+            <div id="stars-container">⭐⭐⭐⭐⭐</div>
+            <div style="background: #f8f9fa; border-radius: 20px; padding: 20px; margin-bottom: 30px;">
+                <p style="font-size: 1.8rem; margin-bottom: 10px;">Markah Anda: <strong id="final-score" style="color: var(--success); font-size: 2.5rem;">0</strong></p>
+                <p style="font-size: 1.3rem; color: var(--danger);">Kesalahan: <span id="final-mistakes" style="font-weight:bold;">0</span></p>
+            </div>
+            <button class="btn" onclick="startGame(currentCardIndex)">Main Lagi</button>
+            <button class="btn btn-blue" onclick="nav('card-select')">Pilih Kad Lain</button>
+            <button class="btn btn-green" onclick="nav('main-menu')">Menu Utama</button>
+        </div>
+    </div>
+
+    <script>
+        // --- SVG ASSETS (BEAUTIFUL VECTORS ENCODED) ---
+        const svgStrings = {
+            bintang: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='#FFD700' stroke='#FFA500' stroke-width='3' stroke-linejoin='round' d='M50 5 L64 35 L95 35 L70 55 L79 85 L50 70 L21 85 L30 55 L5 35 L36 35 Z'/></svg>`,
+            epal: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='#FF4500' stroke='#CD5C5C' stroke-width='2' d='M50 85 C 20 85, 15 50, 25 30 C 35 10, 50 25, 50 25 C 50 25, 65 10, 75 30 C 85 50, 80 85, 50 85 Z'/><path fill='none' stroke='#8B4513' stroke-width='4' stroke-linecap='round' d='M50 25 Q 55 5, 65 5'/><path fill='#32CD32' stroke='#228B22' stroke-width='1.5' d='M65 5 Q 80 5, 80 15 Q 80 25, 65 25 Q 50 25, 50 15 Q 50 5, 65 5 Z'/></svg>`,
+            beruang: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='25' cy='30' r='18' fill='#8B4513'/><circle cx='75' cy='30' r='18' fill='#8B4513'/><circle cx='25' cy='30' r='10' fill='#DEB887'/><circle cx='75' cy='30' r='10' fill='#DEB887'/><circle cx='50' cy='60' r='38' fill='#A0522D'/><circle cx='50' cy='70' r='16' fill='#DEB887'/><circle cx='40' cy='50' r='5' fill='#000'/><circle cx='60' cy='50' r='5' fill='#000'/><ellipse cx='50' cy='65' rx='7' ry='5' fill='#000'/><path d='M50 70 Q 50 76, 43 78 M50 70 Q 50 76, 57 78' fill='none' stroke='#000' stroke-width='2.5' stroke-linecap='round'/></svg>`,
+            kucing: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='15,20 40,40 20,55' fill='#FFA500'/><polygon points='85,20 60,40 80,55' fill='#FFA500'/><polygon points='20,28 35,42 25,50' fill='#FFC0CB'/><polygon points='80,28 65,42 75,50' fill='#FFC0CB'/><circle cx='50' cy='60' r='35' fill='#FF8C00'/><circle cx='36' cy='52' r='6' fill='#FFF'/><circle cx='64' cy='52' r='6' fill='#FFF'/><circle cx='36' cy='52' r='3' fill='#000'/><circle cx='64' cy='52' r='3' fill='#000'/><polygon points='46,62 54,62 50,68' fill='#FF69B4'/><path d='M46 68 Q 38 73, 28 68 M54 68 Q 62 73, 72 68 M46 72 Q 38 77, 28 75 M54 72 Q 62 77, 72 75' fill='none' stroke='#FFF' stroke-width='2' stroke-linecap='round'/></svg>`,
+            kereta: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M20 55 L10 55 C 5 55, 5 45, 10 45 L25 45 L35 25 C 38 20, 42 20, 45 20 L75 20 C 80 20, 85 25, 85 30 L90 45 C 95 45, 95 55, 90 55 L80 55 C 80 65, 65 65, 65 55 L40 55 C 40 65, 25 65, 25 55 Z' fill='#FF4500' stroke='#8B0000' stroke-width='2'/><circle cx='32' cy='55' r='12' fill='#333'/><circle cx='32' cy='55' r='6' fill='#CCC'/><circle cx='73' cy='55' r='12' fill='#333'/><circle cx='73' cy='55' r='6' fill='#CCC'/><rect x='40' y='25' width='15' height='20' rx='2' fill='#87CEFA'/><rect x='60' y='25' width='20' height='20' rx='2' fill='#87CEFA'/><path d='M90 47 L95 47 L95 53 L90 53 Z' fill='#FFFF00'/><path d='M10 47 L5 47 L5 53 L10 53 Z' fill='#FF0000'/></svg>`,
+            ikan: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='10,30 35,50 10,70' fill='#FF6347' stroke='#DC143C' stroke-width='2'/><ellipse cx='60' cy='50' rx='35' ry='25' fill='#1E90FF' stroke='#0000CD' stroke-width='2'/><polygon points='50,25 65,10 70,25' fill='#00BFFF'/><polygon points='50,75 65,90 70,75' fill='#00BFFF'/><circle cx='80' cy='45' r='5' fill='#FFF'/><circle cx='82' cy='45' r='2.5' fill='#000'/><path d='M70 55 Q 75 60, 80 55' fill='none' stroke='#000' stroke-width='2' stroke-linecap='round'/><path d='M40 35 A 20 20 0 0 0 40 65' fill='none' stroke='#87CEFA' stroke-width='3'/><path d='M50 35 A 20 20 0 0 0 50 65' fill='none' stroke='#87CEFA' stroke-width='3'/></svg>`,
+            ramarama: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='#FF69B4' stroke='#FF1493' stroke-width='2' d='M50 50 C 10 10, 0 40, 40 50 C 0 60, 10 90, 50 50 C 90 90, 100 60, 60 50 C 100 40, 90 10, 50 50 Z'/><ellipse cx='50' cy='50' rx='6' ry='28' fill='#4B0082'/><circle cx='28' cy='35' r='6' fill='#FFF'/><circle cx='72' cy='35' r='6' fill='#FFF'/><circle cx='35' cy='65' r='5' fill='#FFF'/><circle cx='65' cy='65' r='5' fill='#FFF'/><path d='M48 22 Q 40 10, 35 15 M52 22 Q 60 10, 65 15' fill='none' stroke='#4B0082' stroke-width='2' stroke-linecap='round'/></svg>`,
+            pelangi: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M10 80 A40 40 0 0 1 90 80' fill='none' stroke='#FF0000' stroke-width='6'/><path d='M16 80 A34 34 0 0 1 84 80' fill='none' stroke='#FFA500' stroke-width='6'/><path d='M22 80 A28 28 0 0 1 78 80' fill='none' stroke='#FFFF00' stroke-width='6'/><path d='M28 80 A22 22 0 0 1 72 80' fill='none' stroke='#008000' stroke-width='6'/><path d='M34 80 A16 16 0 0 1 66 80' fill='none' stroke='#0000FF' stroke-width='6'/><path d='M40 80 A10 10 0 0 1 60 80' fill='none' stroke='#800080' stroke-width='6'/><circle cx='20' cy='80' r='12' fill='#FFF'/><circle cx='8' cy='85' r='9' fill='#FFF'/><circle cx='32' cy='85' r='9' fill='#FFF'/><circle cx='80' cy='80' r='12' fill='#FFF'/><circle cx='68' cy='85' r='9' fill='#FFF'/><circle cx='92' cy='85' r='9' fill='#FFF'/></svg>`
+        };
+
+        function getImgData(svgStr) {
+            return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgStr)}`;
+        }
+
+        // --- DATA & CONFIG ---
+        const CARDS = [
+            {
+                name: "Bintang", level: 1, time: 40, color: "#FFA500",
+                imgSrc: getImgData(svgStrings.bintang),
+                holes: [
+                    {x: 300, y: 120}, {x: 356, y: 240}, {x: 480, y: 240}, 
+                    {x: 380, y: 320}, {x: 416, y: 440}, {x: 300, y: 380}, 
+                    {x: 184, y: 440}, {x: 220, y: 320}, {x: 120, y: 240}, 
+                    {x: 244, y: 240}
+                ]
+            },
+            {
+                name: "Epal", level: 1, time: 45, color: "#CD5C5C",
+                imgSrc: getImgData(svgStrings.epal),
+                holes: [
+                    {x: 300, y: 160}, {x: 380, y: 160}, {x: 420, y: 260},
+                    {x: 400, y: 380}, {x: 300, y: 420}, {x: 200, y: 380},
+                    {x: 180, y: 260}, {x: 220, y: 160}
+                ]
+            },
+            {
+                name: "Beruang", level: 2, time: 50, color: "#8B4513",
+                imgSrc: getImgData(svgStrings.beruang),
+                holes: [
+                    {x: 200, y: 180}, {x: 260, y: 200}, {x: 340, y: 200},
+                    {x: 400, y: 180}, {x: 440, y: 280}, {x: 400, y: 400},
+                    {x: 300, y: 440}, {x: 200, y: 400}, {x: 160, y: 280}
+                ]
+            },
+            {
+                name: "Kucing", level: 2, time: 50, color: "#FF8C00",
+                imgSrc: getImgData(svgStrings.kucing),
+                holes: [
+                    {x: 160, y: 180}, {x: 240, y: 260}, {x: 360, y: 260},
+                    {x: 440, y: 180}, {x: 440, y: 300}, {x: 380, y: 400},
+                    {x: 300, y: 420}, {x: 220, y: 400}, {x: 160, y: 300}
+                ]
+            },
+            {
+                name: "Kereta", level: 3, time: 55, color: "#FF4500",
+                imgSrc: getImgData(svgStrings.kereta),
+                holes: [
+                    {x: 140, y: 280}, {x: 240, y: 200}, {x: 380, y: 200},
+                    {x: 460, y: 240}, {x: 480, y: 300}, {x: 440, y: 320},
+                    {x: 320, y: 320}, {x: 200, y: 320}, {x: 140, y: 320}
+                ]
+            },
+            {
+                name: "Ikan", level: 3, time: 55, color: "#1E90FF",
+                imgSrc: getImgData(svgStrings.ikan),
+                holes: [
+                    {x: 360, y: 200}, {x: 440, y: 240}, {x: 440, y: 360},
+                    {x: 360, y: 400}, {x: 260, y: 360}, {x: 140, y: 380},
+                    {x: 180, y: 300}, {x: 140, y: 220}, {x: 260, y: 240}
+                ]
+            },
+            {
+                name: "Rama-Rama", level: 4, time: 60, color: "#FF1493",
+                imgSrc: getImgData(svgStrings.ramarama),
+                holes: [
+                    {x: 300, y: 160}, {x: 380, y: 140}, {x: 460, y: 220},
+                    {x: 400, y: 300}, {x: 460, y: 380}, {x: 380, y: 460},
+                    {x: 300, y: 400}, {x: 220, y: 460}, {x: 140, y: 380},
+                    {x: 200, y: 300}, {x: 140, y: 220}, {x: 220, y: 140}
+                ]
+            },
+            {
+                name: "Pelangi", level: 5, time: 70, color: "#800080",
+                imgSrc: getImgData(svgStrings.pelangi),
+                holes: [
+                    {x: 140, y: 380}, {x: 160, y: 280}, {x: 220, y: 200},
+                    {x: 300, y: 160}, {x: 380, y: 200}, {x: 440, y: 280},
+                    {x: 460, y: 380}, {x: 380, y: 380}, {x: 380, y: 280},
+                    {x: 300, y: 240}, {x: 220, y: 280}, {x: 220, y: 380}
+                ]
+            }
+        ];
+
+        // --- STATE VARIABLES ---
+        let state = {
+            score: 0, lives: 3, mistakes: 0, time: 60, timerInterval: null,
+            highScore: localStorage.getItem('lacing_highscore') || 0,
+            isDragging: false, currentHoleIndex: 0,
+            dragPos: {x: 0, y: 0}, particles: []
+        };
+        let currentCardIndex = 0;
+        let activeHoles = [];
+
+        // --- CANVAS SETUP ---
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let rect = canvas.getBoundingClientRect();
+
+        window.addEventListener('resize', () => { rect = canvas.getBoundingClientRect(); });
+
+        // --- AUDIO SYSTEM ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration, vol=0.1) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() { playTone(600, 'sine', 0.4, 0.2); setTimeout(()=>playTone(800, 'sine', 0.4, 0.2), 100); }
+        function playErrorSound() { playTone(150, 'sawtooth', 0.4, 0.2); }
+        function playCompleteSound() {
+            [400, 500, 600, 800, 1000].forEach((f, i) => {
+                setTimeout(() => playTone(f, 'square', 0.3, 0.1), i * 150);
+            });
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'ms-MY';
+                msg.rate = 0.9;
+                msg.pitch = 1.3;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        // --- UI NAVIGATION ---
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            if (screenId === 'settings') document.getElementById('high-score-display').innerText = state.highScore;
+        }
+
+        function resetHighScore() {
+            localStorage.setItem('lacing_highscore', 0);
+            state.highScore = 0;
+            document.getElementById('high-score-display').innerText = 0;
+            speak('Markah ditetapkan semula');
+        }
+
+        // --- INITIALIZATION ---
+        function initMenu() {
+            speak("Selamat datang ke Lacing World");
+            const grid = document.getElementById('card-grid-container');
+            grid.innerHTML = '';
+            CARDS.forEach((card, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'card-btn';
+                btn.innerHTML = `
+                    <img src="${card.imgSrc}" alt="${card.name}">
+                    <span style="color: var(--text-dark); margin-bottom:5px;">Tahap ${card.level}</span>
+                    <span style="font-size: 1.4rem; color: var(--primary);">${card.name}</span>
+                `;
+                btn.onclick = () => {
+                    currentCardIndex = index;
+                    startGame(index);
+                };
+                grid.appendChild(btn);
+            });
+            document.getElementById('high-score-display').innerText = state.highScore;
+        }
+
+        function startGame(cardIndex) {
+            const card = CARDS[cardIndex];
+            state.score = 0; state.lives = 3; state.mistakes = 0;
+            state.time = card.time; state.isDragging = false;
+            state.currentHoleIndex = 0; state.particles = [];
+            
+            // Paparkan Gambar Rujukan secara berasingan
+            document.getElementById('ref-image-display').src = card.imgSrc;
+            
+            // Loop the shape: Add the first hole to the end to close the loop
+            activeHoles = JSON.parse(JSON.stringify(card.holes));
+            activeHoles.push(JSON.parse(JSON.stringify(card.holes[0])));
+            
+            activeHoles.forEach((h, i) => { h.connected = (i === 0); h.radius = 16; });
+
+            updateHUD();
+            nav('game-screen');
+            speak(`Lihat corak pada gambar rujukan. Mari menyulam ${card.name}. Klik cahaya pertama.`);
+            
+            clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                state.time--;
+                updateHUD();
+                if (state.time <= 0) endGame(false, "Masa telah tamat.");
+            }, 1000);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function quitGame() {
+            clearInterval(state.timerInterval);
+            nav('main-menu');
+        }
+
+        function updateHUD() {
+            document.getElementById('timer-display').innerText = state.time;
+            document.getElementById('score-display').innerText = state.score;
+            document.getElementById('hearts').innerText = '❤️'.repeat(state.lives) + '🖤'.repeat(3 - state.lives);
+        }
+
+        // --- INPUT HANDLING ---
+        function getMousePos(evt) {
+            rect = canvas.getBoundingClientRect();
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function handleStart(e) {
+            e.preventDefault();
+            const pos = getMousePos(e);
+            const activeHole = activeHoles[state.currentHoleIndex];
+            if (Math.hypot(pos.x - activeHole.x, pos.y - activeHole.y) < 40) {
+                state.isDragging = true;
+                state.dragPos = pos;
+            }
+        }
+
+        function handleMove(e) {
+            if (!state.isDragging) return;
+            e.preventDefault();
+            state.dragPos = getMousePos(e);
+        }
+
+        function handleEnd(e) {
+            if (!state.isDragging) return;
+            state.isDragging = false;
+            e.preventDefault();
+
+            const targetIndex = state.currentHoleIndex + 1;
+            if (targetIndex >= activeHoles.length) return;
+
+            const targetHole = activeHoles[targetIndex];
+            const dist = Math.hypot(state.dragPos.x - targetHole.x, state.dragPos.y - targetHole.y);
+
+            if (dist < 40) {
+                // SUCCESS
+                state.currentHoleIndex = targetIndex;
+                activeHoles[targetIndex].connected = true;
+                state.score += 10;
+                playSuccessSound();
+                createParticles(targetHole.x, targetHole.y, CARDS[currentCardIndex].color);
+                updateHUD();
+                
+                const praises = ["Bagus!", "Hebat!", "Pandai!", "Teruskan!"];
+                if (Math.random() > 0.6) speak(praises[Math.floor(Math.random()*praises.length)]);
+
+                if (state.currentHoleIndex === activeHoles.length - 1) {
+                    endGame(true, "Tahniah! Bentuk anda sama dengan gambar contoh.");
+                }
+            } else {
+                // FAIL
+                state.mistakes++;
+                state.score = Math.max(0, state.score - 5);
+                state.lives--;
+                playErrorSound();
+                updateHUD();
+                canvas.classList.add('shake-anim');
+                setTimeout(() => canvas.classList.remove('shake-anim'), 500);
+                speak("Ups, salah lubang. Rujuk gambar contoh.");
+
+                if (state.lives <= 0) endGame(false, "Permainan tamat. Kehabisan nyawa.");
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('touchstart', handleStart, {passive: false});
+        canvas.addEventListener('touchmove', handleMove, {passive: false});
+        window.addEventListener('touchend', handleEnd);
+
+        // --- RENDER LOOP & PHYSICS ---
+        function gameLoop() {
+            if (document.getElementById('game-screen').classList.contains('hidden')) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const card = CARDS[currentCardIndex];
+
+            // (Latar belakang gambar telah dibuang agar kanvas bersih)
+            // Murid hanya akan melihat tali dan lubang berpandukan kad rujukan
+
+            // 1. Draw completed strings (Bezier Curves for realism)
+            ctx.lineWidth = 10;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = card.color;
+            ctx.shadowColor = "rgba(0,0,0,0.4)";
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 4;
+
+            for (let i = 0; i < state.currentHoleIndex; i++) {
+                const p1 = activeHoles[i];
+                const p2 = activeHoles[i+1];
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                const cp1x = p1.x + (p2.x - p1.x) * 0.5;
+                const cp1y = p1.y + (p2.y - p1.y) * 0.2 + 25; 
+                const cp2x = p1.x + (p2.x - p1.x) * 0.5;
+                const cp2y = p1.y + (p2.y - p1.y) * 0.8 + 25;
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+                ctx.stroke();
+            }
+
+            // 2. Draw active dragging string
+            if (state.isDragging) {
+                const p1 = activeHoles[state.currentHoleIndex];
+                const p2 = state.dragPos;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                const cp1x = p1.x + (p2.x - p1.x) * 0.5;
+                const cp1y = p1.y + (p2.y - p1.y) * 0.2 + 20;
+                ctx.bezierCurveTo(cp1x, cp1y, p2.x, p2.y, p2.x, p2.y);
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 3. Draw Holes (NO NUMBERS, Visual feedback only)
+            activeHoles.forEach((hole, index) => {
+                ctx.beginPath();
+                
+                if (hole.connected) {
+                    ctx.arc(hole.x, hole.y, hole.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = card.color;
+                    ctx.fill();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = "#fff";
+                    ctx.stroke();
+                } else if (index === state.currentHoleIndex + 1) {
+                    // TARGET HOLE: Big pulsing glow
+                    const pulse = 22 + Math.sin(Date.now() / 150) * 6;
+                    
+                    ctx.shadowColor = card.color;
+                    ctx.shadowBlur = 20;
+                    ctx.arc(hole.x, hole.y, pulse, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset
+                    
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = card.color;
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(hole.x, hole.y, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = card.color;
+                    ctx.fill();
+                } else {
+                    ctx.arc(hole.x, hole.y, hole.radius * 0.8, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "#ddd";
+                    ctx.stroke();
+                }
+            });
+
+            // 4. Draw Particles
+            updateAndDrawParticles();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- PARTICLES / CONFETTI ---
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                state.particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA'];
+            for (let i = 0; i < 150; i++) {
+                state.particles.push({
+                    x: canvas.width / 2, y: canvas.height / 2 + 50,
+                    vx: (Math.random() - 0.5) * 25,
+                    vy: (Math.random() - 0.5) * 25 - 10,
+                    life: 2.0,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                let p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3; // gravity
+                p.life -= 0.02;
+
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                if (p.life <= 0) state.particles.splice(i, 1);
+            }
+        }
+
+        // --- GAME OVER LOGIC ---
+        function endGame(isWin, message) {
+            clearInterval(state.timerInterval);
+            
+            if (isWin) {
+                playCompleteSound();
+                createConfetti();
+                state.score += state.time * 2; 
+                if (state.mistakes === 0) state.score += 100;
+                
+                document.getElementById('result-title').innerText = "TAHNIAH!";
+                document.getElementById('result-title').style.color = "var(--success)";
+            } else {
+                document.getElementById('result-title').innerText = "Cuba Lagi";
+                document.getElementById('result-title').style.color = "var(--danger)";
+            }
+
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+                localStorage.setItem('lacing_highscore', state.highScore);
+            }
+
+            document.getElementById('final-score').innerText = state.score;
+            document.getElementById('final-mistakes').innerText = state.mistakes;
+
+            let stars = isWin ? 3 : 0;
+            if (isWin && state.mistakes === 0) stars = 5;
+            else if (isWin && state.mistakes < 3) stars = 4;
+            document.getElementById('stars-container').innerText = '⭐'.repeat(stars) + '🌑'.repeat(5 - stars);
+
+            setTimeout(() => {
+                nav('result-screen');
+                speak(message + ` Markah anda ialah ${state.score}.`);
+            }, 2000); // Masa tambahan sedikit untuk mereka lihat hasil
+        }
+
+        // Boot
+        window.onload = initMenu;
+
+    </script>
+</body>
+</html>
